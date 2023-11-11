@@ -14,7 +14,7 @@ queue* createNode(int value){
 }
 
 bool isEmpty(queue** head){return ((*head)==NULL);}
-queue* peek(queue** head){ return *head;}
+queue* peek(queue** head){ return (*head)->next;}
 
 void push(queue** head,int value){
    queue* newnode=NULL;

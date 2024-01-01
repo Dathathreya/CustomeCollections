@@ -28,7 +28,7 @@ void swap_str(const void* arr,int start,int end){char** temp=(char**)arr;swap(st
 int compare_int(const void* arr,int first,int second){int* temp1=(int*)arr;return temp1[first]<temp1[second];}
 int compare_char(const void* arr,int first,int second){char* temp1=(char*)arr;return temp1[first]<temp1[second];}
 int compare_str(const void* arr,int first,int second)
-{char** temp1=(char**)arr;return (strcmp(temp1[first],temp1[second])>0);}
+{char** temp1=(char**)arr;return (strcmp(temp1[second],temp1[first])>0);}
 
 
 llu fact(int n){

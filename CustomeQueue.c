@@ -1,101 +1,67 @@
 #include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
-#include <ctype.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <stdbool.h>
 
-typedef struct Queue{int value;struct Queue* next;}queue;
+typedef struct Queue{
+    const void* data;
+    struct Queue* next;
+}m_queue; // monotonic queue - circular queue
 
-queue* createNode(int value){
-    queue* newnode=(queue*)malloc(sizeof(queue));
-    newnode->value=value;
-    newnode->next=newnode;
-    return newnode;
-}
-
-bool isEmpty(queue** head){return ((*head)==NULL);}
-queue* peek(queue** head){ return (*head)->next;}
-
-void push(queue** head,int value){
-   queue* newnode=NULL;
-   newnode=createNode(value);
-   if((*head)!=NULL){
-       queue* front=(*head)->next;
-       (*head)->next = newnode;
-       newnode->next = front;
-   }
-        *head=newnode;
-}
-
-void pop(queue** head){
-    if(!isEmpty(head)){
-        if((*head)==(*head)->next){
-            (*head)=NULL;
+int q_pop(m_queue** tail){
+    int removeable=(q_empty(tail)==0);
+    if(removeable){
+        if((*tail)==((*tail)->next)){
+            m_queue* deleteNode = (*tail);
+            (*tail)=NULL;
         }
         else{
-            queue* front=(*head)->next;
-            queue* new_front= front->next;
-            (*head)->next=new_front;
-            free(front);
+            m_queue* deleteNode = (*tail)->next;
+            (*tail)->next = deleteNode->next;
+            free(deleteNode);
         }
     }
+    return removeable;
 }
 
-void test_queue(queue** head){
-    char op='h';
-    int x;
-    while(true){
-        //fflush(stdin);
-        if(op>='a' && op<='z')        
-            printf("1)For Quit type q/Q\n2)For push type y/Y\n3)For front type t/T\n4)For pop type r/R\n5)For check isempty type e/E\n");
-        //fflush(stdin);
-        op=getchar();
-        op=tolower(op);
-        fflush(stdin);
-        if(op>='a' && op<='z')
-        {
-            switch(op){
-                case 'y':
-                    {
-                        fflush(stdin);
-                        printf("Enter number you want to add:");
-                        scanf("%d",&x);
-                        push(head,x);
-                        break;
-                    }
-                case 'q':
-                    {return;}
-                case 't':
-                    {
-                        if(isEmpty(head)){
-                            printf("Queue is Empty!!\n");       
-                        }   
-                        else{
-                            queue* Top=peek(head);
-                            printf("Top number:%d front:%p current:%p\n",Top->next->value,Top->next,Top);
-                        }
-                        break;
-                    }
-                case 'r':
-                    {
-                        if(isEmpty(head)){ printf("Queue is Empty!!\n"); }
-                        else 
-                            {pop(head);}
-                        break;
-                    }
-                case 'e':{
-                        printf("Queue is%s Empty!!\n",((!isEmpty(head))?(" not"):("")));
-                        break;
-                    }
-                default:
-                    printf("Invalid Option!! Try again!!\n");    
-                    break;
-                }
-            }
+void q_push(m_queue** tail,const void* value){
+    // add check for memory limit for pushing
+    if(q_empty(tail))
+    {
+        (*tail) = (m_queue*)malloc(sizeof(m_queue));
+        (*tail)->data = value;
+        (*tail)->next = (*tail);
+    }
+    else{
+        m_queue* newnode = (m_queue*)malloc(sizeof(m_queue));
+        newnode->data    = value;
+        newnode->next    = (*tail)->next;
+        (*tail)->next    = newnode; 
+        (*tail) = newnode;
     }
 }
 
-int main(){
-    queue* head=NULL;
-    test_queue(&head);
+int q_empty(m_queue** tail){
+    return ((*tail)==NULL);
+}
+
+int main()
+{
+    int* value = 45;
+    m_queue* sliding_window=NULL;
+    q_push(&sliding_window,value);  
+    value = 27;
+    q_push(&sliding_window,value);  
+    value = 90;
+    q_push(&sliding_window,value);  
+    value = 13;
+    q_push(&sliding_window,value);  
+    value = 51;
+    q_push(&sliding_window,value);  
+
+    while(!q_empty(&sliding_window)){
+        printf("%d,",(int*)(sliding_window->next)->data);
+        q_pop(&sliding_window);
+    }
+    printf("%d\n",q_empty(&sliding_window));
 }

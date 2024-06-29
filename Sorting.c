@@ -17,20 +17,31 @@ void swap_self_int(const void *arr,int f,int s){
     a1[s]=t;
     return;}
 
-int do_partition(const void *arr,int low,int high,swap_self_t swapfn,compare_self_t comparefn){
+int find_pivot(const void* arr,int low,int high,int want){
     int prev = low-1;
-    int randPos = low + (rand()%(high-low+1));
+    int randPos =  ((rand())%(high-low+1));
+    if(randPos<0){
+        randPos += (high-low+1);
+    }
+    randPos += low;
     swapfn(arr,randPos,high);
-    for(int curr=low;curr<=high;curr++){
-        if(comparefn(arr,curr,high)){
+    for(int curr=low;curr<high;curr++){
+        if(compfn(arr,curr,high)){
             prev++;
-            swapfn(arr,curr,prev);
+            swapfn(arr,prev,curr);
         }
     }
     swapfn(arr,prev+1,high);
     return prev+1;
 }
 
+int quickSelect(const void* arr,int low,int high,int want){
+    if(low>high) return -1;
+    int have = find_pivot(arr,low,high,want);
+    if(want>have) {return quickSelect(arr,have+1,high,want);}  // less difference means go right
+    else if(want<have) {return quickSelect(arr,low,have-1,want);} // more difference means go left
+    return have;
+}
 void QuickSort(const void *arr,int low,int high,swap_self_t swapfn,compare_self_t comparefn){
     if(low>=high) return;
     int pivot = do_partition(arr,low,high,swapfn,comparefn);

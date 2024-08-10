@@ -230,7 +230,7 @@ aNode* select(aNode* curr,int k){
         return select(curr->left,k);
     }
     else 
-        return select(curr->right,k-1-StandingPos);
+        return select(curr->right,k-StandingPos);
 }
 
 aNode* rank(aNode* curr,kvp_ii cmp_itm){

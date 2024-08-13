@@ -1,19 +1,17 @@
+// https://www.spoj.com/problems/ORDERSET/
+Tested 
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <limits.h>
 
-
-int max(int a,int b){
-    return (a<=b)?(b):(a);
-}
-
+int max(int a,int b){return (a>=b)?(a):(b); }
+ 
 typedef struct KeyValuePair{int _Key; int _value; }kvp_ii;
-
-typedef struct AVLNode{kvp_ii _data; int ht; int sz; struct AVLNode* left; struct AVLNode* right; }aNode;
-
+  
 typedef enum Sign{eq,neq,gt,lt,lte,gte} sign_t;
-
+ 
 bool compare_kvp_ii(kvp_ii* f,kvp_ii *s,sign_t sgn){
       bool match = false;
       switch(sgn){
@@ -45,256 +43,315 @@ bool compare_kvp_ii(kvp_ii* f,kvp_ii *s,sign_t sgn){
       return match;     
 }
 
-int getHeight(aNode* curr){if(!curr) return -1; return curr->ht; }
-int getSize(aNode* curr){if(!curr) return 0; return curr->sz; }
 
-int getBalance(aNode* curr){if(!curr) return 0; return getHeight(curr->left)-getHeight(curr->right); }
+typedef struct node
+{
+    kvp_ii _data;
+    int height;
+    struct node *left;
+    struct node *right;
+    int subtree_size;
+}node;
 
-void updateHeight(aNode* curr){
-    if(!curr) return;
-    curr->ht = 1 + max(getHeight(curr->left),getHeight(curr->right));
-    return;
+node* create_node(kvp_ii* k)
+{
+    node *child = (node*)malloc(sizeof(node));
+
+    child->_data._Key = k->_Key;
+    child->_data._value = k->_value;
+    child->height = 1;
+    child->left = NULL;
+    child->right = NULL;
+    child->subtree_size = 1;
+
+    return child;
 }
 
-aNode* newNode(kvp_ii* data){
-    aNode* new_node = (aNode*)malloc(sizeof(aNode));
-    new_node->_data = *data;
-    new_node->ht = 0;
-    new_node->sz = 1;
-    new_node->left = new_node->right = NULL;   
-    return new_node;
+int get_height(node *current_node)
+{
+    if(current_node == NULL)
+        return 0;
+    return current_node->height;
 }
 
-aNode* rotateRight(aNode* root){
-    aNode* new_root = root->left;
-    root->left=new_root->right;
-    new_root->right = root;
+int get_balance(node *current_node)
+{
+    if(current_node == NULL)
+        return 0;
+    return get_height(current_node->left) - get_height(current_node->right);
+}
 
-    root->ht = 1 + max(getHeight(root->left) , getHeight(root->right) );
-    root->sz = 1 + getSize(root->left) + getSize(root->right) ; 
-    new_root->ht = 1 + max(getHeight(new_root->left) , getHeight(new_root->right) );
-    new_root->sz = 1 + getSize(new_root->left) + getSize(new_root->right) ; 
-    return new_root;
-} 
+int get_subtree_size(node *current_node)
+{
+    if(current_node == NULL)
+        return 0;
+    return current_node->subtree_size;
+}
 
-aNode* rotateLeft(aNode* root){
-    aNode* new_root = root->right;
-    root->right=new_root->left;
-    new_root->left = root;
+node* left_rotate(node *x)
+{
+    node *y = x->right;
+    node *t2 = y->left;
 
-    root->ht = 1 + max(getHeight(root->left) , getHeight(root->right) );
-    root->sz = 1 + getSize(root->left) + getSize(root->right) ; 
-    new_root->ht = 1 + max(getHeight(new_root->left) , getHeight(new_root->right) );
-    new_root->sz = 1 + getSize(new_root->left) + getSize(new_root->right) ; 
-    return new_root;
-} 
+    y->left = x;
+    x->right = t2;
 
-aNode* insert(aNode* root,kvp_ii* new_val){
-    if(root==NULL){
-        return newNode(new_val);
-    }
-    if(compare_kvp_ii(&root->_data,new_val,eq)){
-        return root;
-    }
-    else if(compare_kvp_ii(&root->_data,new_val,lt)){
-        root->right = insert(root->right,new_val);
-    }
-    else if(compare_kvp_ii(&root->_data,new_val,gt)){
-        root->left = insert(root->left,new_val);
-    }
+    x->height = max(get_height(x->left), get_height(x->right)) + 1;
+    y->height = max(get_height(y->left), get_height(y->right)) + 1;
+
+    x->subtree_size = get_subtree_size(x->left) + get_subtree_size(x->right) + 1;
+    y->subtree_size = get_subtree_size(y->left) + get_subtree_size(y->right) + 1;
+
+    return y;
+}
+
+node* right_rotate(node *x)
+{
+    node *y = x->left;
+    node *t2 = y->right;
+
+    y->right = x;
+    x->left = t2;
+
+    x->height = max(get_height(x->left), get_height(x->right)) + 1;
+    y->height = max(get_height(y->left), get_height(y->right)) + 1;
+
+    x->subtree_size = get_subtree_size(x->left) + get_subtree_size(x->right) + 1;
+    y->subtree_size = get_subtree_size(y->left) + get_subtree_size(y->right) + 1;
+
+    return y;
+}
+
+node* left_left_case(node *current_node)
+{
+    return right_rotate(current_node);
+}
+
+node* right_right_case(node *current_node)
+{
+    return left_rotate(current_node);
+}
+
+node* left_right_case(node *current_node)
+{
+    current_node->left = left_rotate(current_node->left);
+    return right_rotate(current_node);
+}
+
+node* right_left_case(node *current_node)
+{
+    current_node->right = right_rotate(current_node->right);
+    return left_rotate(current_node);
+}
+
+node* find_min(node *current_node)
+{
+    while(current_node->left != NULL)
+        current_node = current_node->left;
+
+    return current_node;
+}
+
+node* insert_node(node *current_node,kvp_ii* key_)
+{
+    if(current_node == NULL)
+        return create_node(key_);
+
+    if(compare_kvp_ii(key_ , &current_node->_data,lt))
+        current_node->left = insert_node(current_node->left, key_);
+    else if(compare_kvp_ii(key_ , &current_node->_data,gt))
+        current_node->right = insert_node(current_node->right, key_);
+    else
+        return current_node;
+
+    current_node->height = max(get_height(current_node->left), get_height(current_node->right)) + 1;
+    current_node->subtree_size = get_subtree_size(current_node->left) + get_subtree_size(current_node->right) + 1;
+
+    int balance = get_balance(current_node);
+
     
-    root->ht = 1 + max(getHeight(root->left) , getHeight(root->right) );
-    root->sz = 1 + getSize(root->left) + getSize(root->right) ; 
+    if(balance > 1 && get_balance(current_node->left) >= 0)
+        return left_left_case(current_node);
 
-    int balance_factor = getBalance(root);
+    if(balance < -1 && get_balance(current_node->right) <= 0)
+        return right_right_case(current_node);
 
-    if(balance_factor>1 && getBalance(root->left)>=0){ // taller on left subtree (Left should be atleast  Right or more)
-        return rotateRight(root);
-    }
-    if(balance_factor>1 && getBalance(root->left)<0){ // taller on left subtree but rightSide is taller on left subtree strictly
-        root->left = rotateLeft(root->left);
-        return rotateRight(root);
-    }
+    if(balance > 1 && get_balance(current_node->left) < 0)
+        return left_right_case(current_node);
 
-    if(balance_factor<-1 && getBalance(root->right)>0){// taller on right subtree but leftSide is taller on right subtree strictly
-        root->right = rotateRight(root->right);
-        return rotateLeft(root);
-    }
+    if(balance < -1 && get_balance(current_node->right) > 0)
+        return right_left_case(current_node);
 
-    if(balance_factor<-1 && getBalance(root->right)<=0){// taller on right subtree (Left should be atmost  Right or less)
-        return rotateLeft(root);
-    }
-    return root;
+    return current_node;
 }
 
-bool Search(aNode* root,kvp_ii* data){
-        if(compare_kvp_ii(&root->_data,data,eq)){
-            return true;
-        }
-        else if(compare_kvp_ii(&root->_data,data,lt)){
-            return Search(root->right,data); 
-        }
-        else if(compare_kvp_ii(&root->_data,data,gt)){
-            return Search(root->left,data); 
-        }
-    return false;
-}
+node* delete_node(node *current_node,kvp_ii*  key_)
+{
+    if(current_node == NULL)
+        return current_node;
 
-aNode* successor(aNode* curr){
-    aNode* answer = curr;
-    while(curr!=NULL){
-        answer = curr;
-        curr = curr->left;
-    }
-    return answer;
-}
-
-aNode* delete(aNode* root,kvp_ii* del_val){
-    if(!root){
-        return root;
-    }
-    if(compare_kvp_ii(&root->_data,del_val,lt)){
-        root->right = delete(root->right,del_val);
-    }
-    else if(compare_kvp_ii(&root->_data,del_val,gt)){
-        root->left = delete(root->left,del_val);
-    }
-    else{
-        // root-> sz = (root-> sz>=2)?(root-> sz-1):(root->sz); 
-        if((root->left==NULL)||(root->right==NULL))
+    if(compare_kvp_ii(key_ , &current_node->_data,lt))
+        current_node->left = delete_node(current_node->left, key_);
+    else if(compare_kvp_ii(key_ , &current_node->_data,gt))
+        current_node->right = delete_node(current_node->right, key_);
+    else
+    {
+        if(current_node->left == NULL || current_node->right == NULL)
         {
-            aNode* NodeToBeSwappedWithRoot = root->left ? root->left : root->right;
-            if(!NodeToBeSwappedWithRoot){ // root takes role of null node and becomes null
-                NodeToBeSwappedWithRoot = root; // root to be deleted so copied to temp
-                root = NULL;
-            }   
-            else{
-                *root = *NodeToBeSwappedWithRoot;
+            node *temp = NULL;
+
+            if(current_node->left != NULL)
+                temp = current_node->left;
+            else
+                temp = current_node->right;
+
+            if(temp == NULL)
+            {
+                temp = current_node;
+                current_node = NULL;
             }
-            free(NodeToBeSwappedWithRoot);
+            else
+            {
+                current_node->_data = temp->_data;
+                current_node->left = temp->left;
+                current_node->right = temp->right;
+                current_node->height = temp->height;
+                current_node->subtree_size = temp->subtree_size;
+            }
+
+             free(temp);
         }
-        else{
-            aNode* succ = successor(root->right);
-            root->_data = succ->_data;
-            root->right = delete(root->right,&succ->_data);
+        else
+        {
+            node *temp = find_min(current_node->right);
+
+            current_node->_data = temp->_data;
+            current_node->right = delete_node(current_node->right, &temp->_data);
         }
     }
-    
-    if(!root){
-        return root;
-    }
 
-    root->ht = 1 + max(getHeight(root->left) , getHeight(root->right) );
-    root->sz = 1 + getSize(root->left) + getSize(root->right) ; 
+    if(current_node == NULL)
+        return current_node;
 
-    int balance_factor = getBalance(root);
+    current_node->height = max(get_height(current_node->left), get_height(current_node->right)) + 1;
+    current_node->subtree_size = get_subtree_size(current_node->left) + get_subtree_size(current_node->right) + 1;
 
-    if(balance_factor>1 && getBalance(root->left)>=0){ // taller on left subtree (Left should be atleast  Right or more)
-        return rotateRight(root);
-    }
-    if(balance_factor>1 && getBalance(root->left)<0){ // taller on left subtree but rightSide is taller on left subtree strictly
-        root->left = rotateLeft(root->left);
-        return rotateRight(root);
-    }
+    int balance = get_balance(current_node);
 
-    if(balance_factor<-1 && getBalance(root->right)>0){// taller on right subtree but leftSide is taller on right subtree strictly
-        root->right = rotateRight(root->right);
-        return rotateLeft(root);
-    }
+    if(balance > 1 && get_balance(current_node->left) >= 0)
+        return left_left_case(current_node);
 
-    if(balance_factor<-1 && getBalance(root->right)<=0){// taller on right subtree (Left should be atmost  Right or less)
-        return rotateLeft(root);
-    }
-    return root;
+    if(balance < -1 && get_balance(current_node->right) <= 0)
+        return right_right_case(current_node);
+
+    if(balance > 1 && get_balance(current_node->left) < 0)
+        return left_right_case(current_node);
+
+    if(balance < -1 && get_balance(current_node->right) > 0)
+        return right_left_case(current_node);
+
+    return current_node;
 }
 
-// 5 more functions are pending 1)Select 2)Rank 3)Delete 4)*Begin 5)*End
-// select and rank needs size as structure data member in node_type 
+int count_smaller(node *current_node, kvp_ii* key_)
+{
+    if(current_node == NULL)
+        return 0;
 
-void in_order(aNode* curr){
-    if(!curr) return;
-    
-    in_order(curr->left);
-    printf("%d ",curr->_data._Key);
-    in_order(curr->right);
-    return;
+    int total = 0;
+
+    if(compare_kvp_ii(key_ , &current_node->_data,lt))
+    {
+        total = count_smaller(current_node->left, key_);
+    }
+    else if(compare_kvp_ii(key_ , &current_node->_data,gt))
+    {
+        total = get_subtree_size(current_node->left) + 1;
+        total = total + count_smaller(current_node->right, key_);
+    }
+    else
+    {
+        total = get_subtree_size(current_node->left);
+    }
+
+    return total;
 }
 
-aNode* select(aNode* curr,int k){
-    if(!curr) return 0;
-    int StandingPos = 1 + getSize(curr->left) ;
-    if(k == StandingPos){
-        return curr;
-    }
-    else if (k < StandingPos){
-        return select(curr->left,k);
-    }
-    else 
-        return select(curr->right,k-StandingPos);
-}
+node* find_k_smallest(node *current_node, int k)
+{
+    node* ret = NULL;
+    while(current_node != NULL)
+    {
+        int left_subtree_size = get_subtree_size(current_node->left);
 
-aNode* rank(aNode* curr,kvp_ii cmp_itm){
-    if(!curr) return 0;
-    int StandingPos = 1 + getSize(curr->left) ;
-    if(compare_kvp_ii(&curr->_data,&cmp_itm,gte)){ // have >= want
-        return rank(curr->left,cmp_itm);
-    }
-    else  // have < want
-        return StandingPos + rank(curr->right,cmp_itm);
-}
-
-aNode* rbegin(aNode* root){if(!root) return NULL; aNode* curr = root; while(curr->right!=NULL){curr = curr->right; } return curr; }
-
-aNode* begin(aNode* root){if(!root) return NULL; aNode* curr = root; while(curr->left!=NULL){curr = curr->left; } return curr; }
-
-int hasNextInt(int* choice){return (scanf("%d",&(*choice))>0); }
-
-void solve(){
-    int x,choice;
-    aNode* root=NULL;
-    kvp_ii item;
-    while(hasNextInt(&choice)){
-        //printf("inside %d\n",choice);
-        switch(choice){
-            case 1: {
-                scanf("%d",&x);
-                item._Key = x;
-                item._value = x;
-                root=insert(root,&item);
-                break;
-            }
-            case 2: {
-                scanf("%d",&x);
-                item._Key = x;
-                item._value = x;
-                root=delete(root,&item);
-                break;
-            }
-            case 3: {
-                in_order(root);
-                putchar('\n');
-                break;
-            }
-            case 4: {
-                break;
-            }
-            case 7: {
-                printf("continue without break goto start\n");
-                break;
-            }
-        }
-    
-        if(choice==4){
+        if(left_subtree_size + 1 == k)
+        {
+            ret = current_node;
             break;
         }
+        else if(left_subtree_size < k)
+        {
+            k -= left_subtree_size + 1;
+            current_node = current_node->right;
+        }
+        else
+        {
+            current_node = current_node->left;
+        }
     }
+    return ret;
+}
+
+void delete_tree(node *current_node)
+{
+    if(current_node == NULL)
+    {
+        free(current_node);
+        return;
+    }
+    delete_tree(current_node->left);
+    delete_tree(current_node->right);
     return;
 }
 
-int main(int argc,char* argv[]){
-    int tt=1;
-    // assert(fscanf(stdin,"%d",&tt)>0);
-    while(tt--){
-        solve();
+int main()
+{
+    int q,a;
+    char ch[5];
+    node *root = NULL;
+
+    scanf("%d",&q);
+    while(q--)
+    {
+        scanf("%s %d",ch,&a);
+
+        if(ch[0] == 'I')
+        {
+            root = insert_node(root, &(kvp_ii){._Key=a,._value=a});
+        }
+        else if(ch[0] == 'D')
+        {
+            root = delete_node(root, &(kvp_ii){._Key=a,._value=a});
+        }
+        else if(ch[0] == 'K')
+        {
+            if((root==NULL)||(a > root->subtree_size))
+            {
+                printf("invalid\n");
+            }
+            else
+            {
+                node* nde = find_k_smallest(root, a);
+                printf("%d\n",nde->_data._Key);
+            }
+        }
+        else if(ch[0] == 'C')
+        {
+            a = count_smaller(root, &(kvp_ii){._Key=a,._value=a});
+            printf("%d\n",a);
+        }
     }
+
+    delete_tree(root);
+    return 0;
 }

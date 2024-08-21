@@ -1,48 +1,79 @@
 #include <stdio.h>
-#include <assert.h>
 #include <stdbool.h>
 
-#define M (int)2e5+9
-#define FOR(n) for(int i=0;i<n;i++)
-int min(int a,int b){return (a<=b)?(a):(b);}
-int max(int a,int b){return (a>=b)?(a):(b);}
-typedef long long unsigned llu;
-typedef long long int lli ;
+#define M (int)3e5+7
+
+typedef long long int ll_t;
+typedef long long unsigned llu_t;
+typedef long double ld_t;
 
 int fenwickTree[M],fsz=0;
 
-void writeInt(int n){
-    if(n<0){
-        putchar('-');
-        n= -n;
-    }
-    int N=n,rev=n,count=0;
-    while((rev%10)==0){count++;rev/=10;}
-    rev=0;
-    if(N==0) {putchar('0');putchar('\n');return;}
-    while(N>=1){
-        //printf("%d,",rev); to print character in reverse 
-        rev=rev*10+(N%10);N/=10;}
-    while(rev>=1){putchar(rev%10 +'0');rev/=10;}
-    while(count--){putchar('0');}
-    putchar(' ');
-    return;
+int edges[M][2];
+
+// __getchar_nolock
+// __fwrite_nolock
+
+ll_t readi(){
+	bool minus = false;
+	int result = 0;
+	char ch;
+	ch = getchar();
+	while (true) {
+		if (ch == '-') break;
+		if (ch >= '0' && ch <= '9') break;
+		ch = getchar();
+	}
+	if (ch == '-') minus = true; else result = ch-'0';
+	while (true) {
+		ch = getchar();
+		if (ch < '0' || ch > '9') break;
+		result = result*10 + (ch - '0');
+	}
+	if (minus)
+		return -result;
+	else
+		return result;
 }
 
-bool isD(char _ch){return (_ch>='0' && _ch<='9');}
-
-int readInt(){
-   char _ch;
-   do{
-        _ch = getchar();
-   }while( _ch!='-' && !isD(_ch)  );
-   bool neg = (_ch=='-');
-   int ans = neg ? 0:(_ch-'0');
-   while(isD(_ch = getchar())){
-       ans = 10*ans + (_ch-'0'); 
-   }
-   return neg?-ans:ans;
+void printi(ll_t ret){
+	ll_t rev = 0,zero=0,rev1=0;
+	rev = ret;
+	if(rev<0){
+		putchar('-');
+		rev = -rev;
+	}
+	while((rev>0)&&((rev%10)==0)){
+		rev /= 10;
+		zero++;
+	}
+	rev1 = 0;
+	while(rev>0){
+		rev1 += (rev%10);
+		rev /= 10; 
+		if(rev>0)
+		    rev1 *=10; // scaling is needed only if we still have next 
+	}
+	while(rev1>0){
+		char c = (char)((rev1%10)+'0');
+		putchar(c);
+		rev1 /= 10;
+	}
+	while(zero--){
+		putchar('0');
+	}
+	return;
 }
+
+int query(int u,int v){
+	int inp;
+	putchar('?');putchar(' ');printi(u);putchar(' ');printi(v);putchar('\n');
+	fflush(stdout);
+	inp = readi();
+	return inp;
+}
+
+
 
 void update(int index,int value){
     for(int i=index;i<fsz;){
@@ -60,7 +91,7 @@ void update(int index,int value){
     return;
 }
 
-int query(int index){
+int query1(int index){
     int answer = 0;
     for(int i=index;i>=0;){
         answer += fenwickTree[i];
@@ -73,30 +104,35 @@ int query(int index){
     return answer;
 }
 
-void solve(void){
-    //int n = 123456789;
-    int N=readInt();
-    FOR(N)
-    {
-        int n=readInt();
-        printf("%d\n",n);
-    }    
-    //writeInt(n);
-    return;
-}
-
-
-int main(int argc,char* argv[]){
-    int tt=1;
-    /*assert(fscanf(stdin,"%d",&tt)>0)*/
-    while(tt--){
-        solve();
+void solve(){
+	int n,sz=0;
+	n=readi();
+	for(int u=2;u<=n;u++){
+        int par = 1;
+        while(1){
+            int newPar = query(par,u);
+            if(newPar==par)
+                break;
+            par=newPar;
+        }
+        edges[sz][0] = par; 
+        edges[sz][1] = u;
+        sz++;
     }
-    return 0-0;
+	putchar('!');putchar(' ');
+	for(int i=0;i<sz;i++){
+		printi(edges[i][0]);putchar(' ');printi(edges[i][1]);putchar(' ');
+	}
+	
+	putchar('\n');
+	fflush(stdout);
 }
 
-// treap,multiplicative inverse,red black tree,SplayTree
-// SCC,DSU,Bipartite,EulerTour,HamiltonPath,SPF,MST,A*
+int main(){
+	int tt=readi();
+	while(tt--){
+		solve();
+	}
+}
 
-// https://www.geeksforgeeks.org/problems/numbers-with-same-first-and-last-digit4228/1?itm_source=geeksforgeeks&itm_medium=article&itm_campaign=practice_card
-
+//to connect n vertices i need n-1 edges to form a tree 

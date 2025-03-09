@@ -1,5 +1,5 @@
 // https://www.spoj.com/problems/ORDERSET/
-Tested 
+// Tested 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
